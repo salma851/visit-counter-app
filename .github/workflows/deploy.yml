@@ -1,30 +1,34 @@
-name: Deploy Dockerized Node App to Azure
+name: Deploy Dockerized Node.js App to Azure
 
 on:
   push:
     branches:
-      - main
+      - main  # ou 'master' selon ton repo
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE1}}
 
       - name: Build Docker image
-        run: docker build -t laraqui1357/visit-counter:latest .
+        run: |
+          docker build -t visit-counter-app .
 
-      - name: Push Docker image
-        run: docker push laraqui1357/visit-counter:latest
+      - name: Zip Docker image
+        run: |
+          zip -r release.zip .
 
-      - name: Deploy to Azure Web App
+      - name: Deploy to Azure Web App (Docker)
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'visit-counter-container-app'
+          app-name: 'cloud-docker-app1'  # Nom exact de ton App Service
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: 'laraqui1357/visit-counter:latest'
+          package: release.zip
